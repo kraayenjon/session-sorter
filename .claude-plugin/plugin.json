@@ -1,0 +1,10 @@
+{
+  "name": "session-sorter",
+  "version": "0.1.0",
+  "description": "Sort ungrouped Claude Code sessions into Session Manager groups: you approve the categories, Jev sorts, nothing moves until you confirm.",
+  "author": { "name": "Jon Kraayenbrink", "url": "https://madewithjev.com" },
+  "homepage": "https://madewithjev.com",
+  "repository": "https://github.com/kraayenjon/session-sorter",
+  "license": "MIT",
+  "keywords": ["sessions", "jev", "organize"]
+}

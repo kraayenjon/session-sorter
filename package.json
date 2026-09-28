@@ -1,0 +1,16 @@
+{
+  "name": "session-sorter",
+  "version": "0.1.0",
+  "description": "Sort ungrouped Claude Code sessions into Session Manager groups, with Jev.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Jon Kraayenbrink",
+  "repository": "github:kraayenjon/session-sorter",
+  "homepage": "https://madewithjev.com",
+  "bin": { "session-sorter": "src/cli.mjs" },
+  "files": ["src", "skills", ".claude-plugin"],
+  "engines": { "node": ">=21" },
+  "os": ["darwin"],
+  "scripts": { "test": "node --test test/*.test.mjs" },
+  "keywords": ["claude-code", "jev", "typesafe", "sessions", "cursor", "vscode"]
+}

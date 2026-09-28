@@ -1,0 +1,7 @@
+{
+  "name": "session-sorter",
+  "owner": { "name": "Jon Kraayenbrink", "url": "https://madewithjev.com" },
+  "plugins": [
+    { "name": "session-sorter", "description": "Sort ungrouped Claude Code sessions into Session Manager groups, with Jev.", "source": "./" }
+  ]
+}
