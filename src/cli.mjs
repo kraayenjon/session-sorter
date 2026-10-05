@@ -113,11 +113,12 @@ async function main() {
         onProgress: (done, total) => process.stderr.write(`\r  ${done}/${total}`),
       });
       process.stderr.write("\n");
-      writeJson(files.plan, { project: root, createdAt: new Date().toISOString(), categories: data.categories, items });
+      const seconds = Math.round((Date.now() - started) / 100) / 10;
+      writeJson(files.plan, { project: root, createdAt: new Date().toISOString(), seconds, cost, categories: data.categories, items });
 
       const count = (d) => items.filter((i) => i.decision === d).length;
       return say(
-        `Sorted ${items.length} sessions in ${((Date.now() - started) / 1000).toFixed(1)} s, cost $${cost}.`,
+        `Sorted ${items.length} sessions in ${seconds.toFixed(1)} s, cost $${cost}.`,
         `  move ${count("move")}   review ${count("review")}   leave ${count("leave")}${items.some((i) => i.error) ? `   failed ${items.filter((i) => i.error).length}` : ""}`,
         "",
         "Nothing has moved. Next: session-sorter review",
@@ -145,13 +146,19 @@ async function main() {
     case "apply": {
       if (!existsSync(files.plan)) throw new Error("No plan yet. Run: session-sorter classify");
       const plan = readJson(files.plan);
-      const { state } = readState(db);
-      const { groups, changes, skipped } = applyPlan(groupsFor(state, root), plan, { includeReview: has("--include-review") });
+      // A plan can be days old. Only sessions that are still ungrouped move: not ones
+      // archived, grouped by hand or deleted since classify ran.
+      const { groups: current, ungrouped } = await inventory();
+      const live = new Set(ungrouped.map((s) => s.id));
+      const wanted = (i) => i.decision === "move" || (has("--include-review") && i.decision === "review");
+      const stale = plan.items.filter((i) => wanted(i) && !live.has(i.sessionId)).length;
+      const { groups, changes, skipped } = applyPlan(current, { ...plan, items: plan.items.filter((i) => live.has(i.sessionId)) }, { includeReview: has("--include-review") });
 
       const created = changes.filter((c) => c.type === "create").map((c) => c.group);
       const moves = changes.filter((c) => c.type === "move");
       say(`${moves.length} sessions into ${new Set(moves.map((m) => m.group)).size} groups${created.length ? `, ${created.length} new: ${created.join(", ")}` : ""}.`);
       for (const [group, list] of Object.entries(Object.groupBy(moves, (m) => m.group))) say(`  ${group}: ${list.length}`);
+      if (stale) say(`Left out ${stale}: archived, grouped or deleted since the plan was made (${plan.createdAt.slice(0, 10)}). For a fresh plan, run: session-sorter classify`);
       if (skipped.length) say(`Skipped ${skipped.length}: ${[...new Set(skipped.map((s) => s.why))].join("; ")}.`);
       if (!moves.length) return;
 
