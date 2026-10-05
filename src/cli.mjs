@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { classify } from "./classify.mjs";
 import { pickBackend } from "./jev.mjs";
 import { applyPlan, validateCategories } from "./plan.mjs";
-import { archivedIds, dbPath, editorRunning, groupsFor, latestBackup, readState, writeGroups } from "./store.mjs";
+import { archivedIds, backupGroups, dbPath, editorRunning, groupsFor, latestBackup, readState, writeGroups } from "./store.mjs";
 import { encodeProject, listSessions, scopeRoot, sessionsDir } from "./sessions.mjs";
 
 const HELP = `session-sorter — sort ungrouped Claude Code sessions into Session Manager groups, with Jev
@@ -164,7 +164,7 @@ async function main() {
     case "undo": {
       const backup = latestBackup(files.backups);
       if (!backup) throw new Error("No backup for this project. Nothing to undo.");
-      const before = groupsFor(readState(backup, { immutable: true }).state, root);
+      const before = backupGroups(backup, root);
       say(`Restore this project's groups from ${backup}: ${before.length} group${before.length === 1 ? "" : "s"}, ${before.reduce((n, g) => n + g.sessionIds.length, 0)} sessions.`);
       if (!has("--yes")) return say("Nothing written. Quit the editor, then run: session-sorter undo --yes");
 

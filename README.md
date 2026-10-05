@@ -108,7 +108,7 @@ Only ungrouped sessions move. A session you already filed stays where it is, and
 
 ## Why the editor has to be closed
 
-The extension keeps its groups in the editor's own state database (`state.vscdb`), under the extension's entry, as `sessionGroups:<workspace folder>`. The editor holds that state in memory while it runs and writes it back on exit, so a change made while it runs would be silently overwritten. `apply` refuses if the editor is running. Before writing, it copies the whole database to `~/.session-sorter/<project>/backups/`, then changes that one key and nothing else.
+The extension keeps its groups in the editor's own state database (`state.vscdb`), under the extension's entry, as `sessionGroups:<workspace folder>`. The editor holds that state in memory while it runs and writes it back on exit, so a change made while it runs would be silently overwritten. `apply` refuses if the editor is running. Before writing, it saves this project's current groups to a small JSON file in `~/.session-sorter/<project>/backups/`, then changes that one key and nothing else. The rest of the database, which holds the editor's own chat history, is never copied.
 
 This is not an official API. The format was read from Claude Code extension 2.1.283, and a future version could change it. `apply` writes only groups the extension itself accepts: an id, a name of at most 100 characters, and session ids, within the extension's limits of 100 groups and 1,000 grouped sessions.
 

@@ -11,7 +11,7 @@
  * write() refuses while the editor runs, and always takes a backup first.
  */
 import { execFileSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -71,16 +71,18 @@ export function archivedIds(state) {
 }
 
 /**
- * Write new groups for one workspace. Backs the whole file up first and
- * returns the backup's path, which `undo` restores.
+ * Write new groups for one workspace. First saves that workspace's current
+ * groups to a small JSON file and returns its path, which `undo` restores.
+ * Only the groups are saved: the editor's database also holds its own chat
+ * history and every other extension's state, which is large and not ours to copy.
  */
 export function writeGroups({ db, app, root, groups, backupDir, env = process.env }) {
   if (editorRunning(app, env)) throw new Error(`${(APPS[app] ?? APPS.cursor).folder} is running. Quit it completely (Cmd+Q), then run apply again.`);
 
   const { key, state } = readState(db);
   mkdirSync(backupDir, { recursive: true });
-  const backup = join(backupDir, `state.vscdb.${new Date().toISOString().replace(/[:.]/g, "-")}`);
-  copyFileSync(db, backup);
+  const backup = join(backupDir, `groups.${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
+  writeFileSync(backup, JSON.stringify({ root, groups: groupsFor(state, root) }, null, 2));
 
   const next = { ...state, [`sessionGroups:${root}`]: groups };
   const tmp = join(tmpdir(), `session-sorter-${process.pid}.json`);
@@ -92,7 +94,18 @@ export function writeGroups({ db, app, root, groups, backupDir, env = process.en
 
 export function latestBackup(backupDir) {
   if (!existsSync(backupDir)) return null;
-  const files = readdirSync(backupDir).filter((f) => f.startsWith("state.vscdb.")).sort();
+  // Both names end in the same timestamp format, so the newest sorts last.
+  const stamp = (f) => f.replace(/^(state\.vscdb|groups)\./, "");
+  const files = readdirSync(backupDir)
+    .filter((f) => /^(state\.vscdb|groups)\./.test(f))
+    .sort((a, b) => stamp(a).localeCompare(stamp(b)));
 
   return files.length ? join(backupDir, files.at(-1)) : null;
+}
+
+/** The groups a backup holds. Versions up to 0.1.0 saved a copy of the whole database instead. */
+export function backupGroups(backup, root) {
+  if (backup.endsWith(".json")) return JSON.parse(readFileSync(backup, "utf8")).groups ?? [];
+
+  return groupsFor(readState(backup, { immutable: true }).state, root);
 }
