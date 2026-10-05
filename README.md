@@ -8,7 +8,7 @@ The Claude Code extension for Cursor and VS Code has a Session Manager with grou
 scan sessions  ->  approve categories  ->  one Jev call each  ->  review the plan  ->  apply (and undo)
 ```
 
-On a real project with 101 ungrouped sessions, Jev sorted all of them in **7.9 s** for **$0.003** in total: 72 moved, 23 flagged for review, 6 left alone.
+On a real project with 101 ungrouped sessions, Jev sorted all of them in **7.9 s** for **$0.003** in total: 72 moved, 23 flagged for review, 6 left alone. Jev's answers vary a little from run to run: a second run on the same sessions gave 72 / 21 / 8.
 
 ```
 $ session-sorter review

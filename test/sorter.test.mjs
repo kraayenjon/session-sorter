@@ -42,7 +42,8 @@ function fixture() {
     hiddenSessionIds: ["archived"],
     thinkingLevel: "default_on",
   };
-  execFileSync("sqlite3", [db, "CREATE TABLE ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB); CREATE TABLE other (x);"]);
+  // WAL mode, as the editor uses: a backup copied from it has no -shm file beside it.
+  execFileSync("sqlite3", [db, "PRAGMA journal_mode=WAL; CREATE TABLE ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB); CREATE TABLE other (x);"]);
   writeFileSync(join(base, "seed.json"), JSON.stringify(state));
   execFileSync("sqlite3", [db, `INSERT INTO ItemTable VALUES ('Anthropic.claude-code', CAST(readfile('${join(base, "seed.json")}') AS TEXT)); INSERT INTO ItemTable VALUES ('other.extension', '{"keep":true}');`]);
 

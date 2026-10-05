@@ -36,7 +36,8 @@ const db = dbPath(app);
 const work = process.env.SESSION_SORTER_HOME ? join(process.env.SESSION_SORTER_HOME, encodeProject(root)) : join(homedir(), ".session-sorter", encodeProject(root));
 const files = { categories: join(work, "categories.json"), plan: join(work, "plan.json"), backups: join(work, "backups") };
 
-const say = (...lines) => console.log(lines.join("\n"));
+// Paths under the home folder print as ~/…, shorter and safe to paste or screenshot.
+const say = (...lines) => console.log(lines.join("\n").replaceAll(homedir(), "~"));
 const readJson = (file) => JSON.parse(readFileSync(file, "utf8"));
 const writeJson = (file, value) => {
   mkdirSync(work, { recursive: true });
@@ -163,7 +164,7 @@ async function main() {
     case "undo": {
       const backup = latestBackup(files.backups);
       if (!backup) throw new Error("No backup for this project. Nothing to undo.");
-      const before = groupsFor(readState(backup).state, root);
+      const before = groupsFor(readState(backup, { immutable: true }).state, root);
       say(`Restore this project's groups from ${backup}: ${before.length} group${before.length === 1 ? "" : "s"}, ${before.reduce((n, g) => n + g.sessionIds.length, 0)} sessions.`);
       if (!has("--yes")) return say("Nothing written. Quit the editor, then run: session-sorter undo --yes");
 

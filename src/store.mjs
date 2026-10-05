@@ -42,15 +42,19 @@ export function editorRunning(app, env = process.env) {
   }
 }
 
-function sql(db, query, { readonly = false } = {}) {
-  return execFileSync("sqlite3", [...(readonly ? ["-readonly"] : []), "-json", db, query], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+function sql(db, query, { readonly = false, immutable = false } = {}) {
+  // A backup is a lone copy of a WAL-mode file. SQLite cannot open that read-only
+  // without its -shm file, unless it is told the file will not change.
+  const target = immutable ? `file:${encodeURI(db).replace(/[?#]/g, encodeURIComponent)}?immutable=1` : db;
+
+  return execFileSync("sqlite3", [...(readonly ? ["-readonly"] : []), "-json", target, query], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
 }
 
 /** The extension's row. The key's case varies by editor, so it is matched case-insensitively. */
-export function readState(db) {
+export function readState(db, { immutable = false } = {}) {
   if (!existsSync(db)) throw new Error(`No editor state at ${db}. Is the extension installed in this editor?`);
 
-  const rows = JSON.parse(sql(db, "SELECT key, CAST(value AS TEXT) AS value FROM ItemTable WHERE lower(key) = 'anthropic.claude-code'", { readonly: true }) || "[]");
+  const rows = JSON.parse(sql(db, "SELECT key, CAST(value AS TEXT) AS value FROM ItemTable WHERE lower(key) = 'anthropic.claude-code'", { readonly: true, immutable }) || "[]");
   if (!rows.length) throw new Error("The Claude Code extension has no saved state in this editor yet. Open its Session Manager once.");
 
   const row = rows.find((r) => r.value.includes("sessionGroups:")) ?? rows[0];
